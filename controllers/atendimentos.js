@@ -5,20 +5,22 @@ module.exports = app => {
     app.get('/atendimentos/:id', (req, res) => {
         const id = parseInt(req.params.id);
         Atendimento.getById(id, res);
-     });
+    });
     app.post('/atendimentos', (req, res) => {
         const atendimento = req.body;
-        Atendimento.adiciona(atendimento, res)
+        Atendimento.adiciona(atendimento, res).then(
+            atendimentoCadastrado => res.status(201).json(atendimentoCadastrado)
+        ).catch(errors => res.status(400).json(erros))
     })
     app.patch('/atendimentos/:id', (req, res) => {
         const id = parseInt(req.params.id);
         const valores = req.body;
-        Atendimento.altera(id,valores,res);
-        
+        Atendimento.altera(id, valores, res);
+
     })
 
-    app.delete('/atendimentos/:id', (req,res) =>{
+    app.delete('/atendimentos/:id', (req, res) => {
         const id = parseInt(req.params.id);
-        Atendimento.delete(id,res);
+        Atendimento.delete(id, res);
     })
 }

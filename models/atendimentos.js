@@ -1,5 +1,8 @@
 const moment = require('moment');
-const conexao = require('../infraestrutura/conexao');
+const axios = require('axios')
+const conexao = require('../infraestrutura/database/conexao');
+const repositorio = require('../repositorios/atendimentos');
+
 class Atendimento {
     adiciona(atendimento, res) {
         const dataCriacao = moment().format('YYYY-MM-DD');
@@ -21,65 +24,65 @@ class Atendimento {
         ]
         const errors = validacoes.filter(campo => !campo.valido);
         const existemErros = errors.length;
-        if (existemErros) { res.status(400).json(errors) }
-        else {
+        if (existemErros) {
+            return new Promise((resolve, reject) => reject(errors));
+        } else {
             const atendimentoDatado = { ...atendimento, data, dataCriacao };
-            const sql = 'INSERT INTO Atendimentos SET ?'
-            conexao.query(sql, atendimentoDatado, (error, resultados) => {
-                if (error) {
-                    console.log(error);
-                    res.status(400).json(error)
-                } else {
-                    res.status(201).json(resultados)
-                }
-            })
+            return repositorio.adiciona(atendimentoDatado).then((resultados) => {
+                const id = resultados.insertId
+                return ({ ...atendimento, id })
+            });
         }
     }
 
-    lista(res){
+    lista(res) {
         const sql = 'SELECT * FROM Atendimentos';
         conexao.query(sql, (err, resultados) => {
-            if(err){
+            if (err) {
                 res.status(400).json(err);
             }
-            else{
+            else {
                 res.status(200).json(resultados);
             }
         })
     }
-    getById(id, res){
+    getById(id, res) {
         const sql = `SELECT * FROM Atendimentos WHERE id = ${id}`;
         conexao.query(sql, (err, resultados) => {
-            if(err){
+            if (err) {
                 res.status(400).json(err);
             }
-            else{
-                res.status(200).json(resultados[0]);
+            if (typeof resultados[0] === 'undefined') {
+                res.status(400).send('Argumentos inválidos');
+            }
+            else {
+                const atendimento = resultados[0]
+                res.status(200).json(atendimento);
             }
         })
     }
 
-    altera(id, valores, res){
-        if(valores.data){
+    altera(id, valores, res) {
+        if (valores.data) {
             valores.data = moment(valores.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH:MM:SS');
-        
+
         }
         const sql = 'UPDATE Atendimentos SET ? WHERE id=?'
-        conexao.query(sql, [valores, id], (err, resultados) =>{
-            if(err){
+        conexao.query(sql, [valores, id], (err, resultados) => {
+            if (err) {
                 res.status(400).json(err);
-            }else{
+            } else {
                 res.status(200).json(resultados);
             }
         });
     }
 
-    delete(id, res){
-        const sql = 'DELE FROM Atendimentos WHERE id=?'
-        conexao.query(sql, id, (err, resultados) =>{
-            if(err){
+    delete(id, res) {
+        const sql = 'DELETE FROM Atendimentos WHERE id=?'
+        conexao.query(sql, id, (err, resultados) => {
+            if (err) {
                 res.status(400).json(err);
-            }else{
+            } else {
                 res.status(200).json(resultados);
             }
         })
